@@ -34,9 +34,19 @@ func buildResourcesFromFixtures() []*Resource {
 					Email: "fede.barcelona@sysdig.com",
 				},
 			},
+			LatestVersion: "0.0.2",
 			Rules: []*FalcoRuleData{
 				{
-					Raw: "- macro: apache_consider_syscalls\n  condition: (evt.num < 0)",
+					Version:            "0.0.1",
+					TargetFalcoVersion: "0.17",
+					Description:        "First version",
+					Raw:                "- macro: apache_consider_syscalls\n  etc: etc\n",
+				},
+				{
+					Version:            "0.0.2",
+					TargetFalcoVersion: "0.18",
+					Description:        "New version for Falco 0.18",
+					Raw:                "- macro: apache_consider_syscalls\n  condition: (evt.num < 0)",
 				},
 			},
 		},
@@ -59,9 +69,19 @@ func buildResourcesFromFixtures() []*Resource {
 					Email: "fede.barcelona@sysdig.com",
 				},
 			},
+			LatestVersion: "1.0.1",
 			Rules: []*FalcoRuleData{
 				{
-					Raw: "- macro: mongo_consider_syscalls\n  condition: (evt.num < 0)",
+					Version:            "1.0.0",
+					TargetFalcoVersion: "0.17",
+					Description:        "First version",
+					Raw:                "- macro: mongo_consider_syscalls\n  etc: etc\n",
+				},
+				{
+					Version:            "1.0.1",
+					TargetFalcoVersion: "0.18",
+					Description:        "New version for Falco 0.18",
+					Raw:                "- macro: mongo_consider_syscalls\n  condition: (evt.num < 0)",
 				},
 			},
 		},

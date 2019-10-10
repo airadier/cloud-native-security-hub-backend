@@ -14,6 +14,7 @@ type HandlerRepository interface {
 	retrieveAllResourcesHandler(writer http.ResponseWriter, request *http.Request, _ httprouter.Params)
 	retrieveOneResourcesHandler(writer http.ResponseWriter, request *http.Request, params httprouter.Params)
 	retrieveFalcoRulesForHelmChartHandler(writer http.ResponseWriter, request *http.Request, params httprouter.Params)
+	retrieveFalcoRulesForHelmChartHandlerLatestVersion(writer http.ResponseWriter, request *http.Request, params httprouter.Params)
 	retrieveAllVendorsHandler(writer http.ResponseWriter, request *http.Request, _ httprouter.Params)
 	retrieveOneVendorsHandler(writer http.ResponseWriter, request *http.Request, params httprouter.Params)
 	retrieveAllResourcesFromVendorHandler(writer http.ResponseWriter, request *http.Request, params httprouter.Params)
@@ -78,7 +79,23 @@ func (h *handlerRepository) retrieveOneResourcesHandler(writer http.ResponseWrit
 }
 
 func (h *handlerRepository) retrieveFalcoRulesForHelmChartHandler(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-	useCase := h.factory.NewRetrieveFalcoRulesForHelmChartUseCase(params.ByName("resource"))
+	version := params.ByName("version")
+	useCase := h.factory.NewRetrieveFalcoRulesForHelmChartUseCase(params.ByName("resource"), version)
+	content, err := useCase.Execute()
+	if err != nil {
+		writer.WriteHeader(500)
+		h.logRequest(request, 500)
+		writer.Write([]byte(err.Error()))
+		return
+	}
+	writer.Header().Set("Content-Type", "application/x-yaml")
+	writer.Header().Set("Content-Disposition", "attachment; filename=\"custom-rules-"+version+".yaml\"")
+	h.logRequest(request, 200)
+	writer.Write(content)
+}
+
+func (h *handlerRepository) retrieveFalcoRulesForHelmChartHandlerLatestVersion(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	useCase := h.factory.NewRetrieveFalcoRulesForHelmChartLatestVersionUseCase(params.ByName("resource"))
 	content, err := useCase.Execute()
 	if err != nil {
 		writer.WriteHeader(500)

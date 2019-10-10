@@ -24,19 +24,44 @@ type Resource struct {
 	Icon             string           `json:"icon" yaml:"icon"`
 	Website          string           `json:"website" yaml:"website"`
 	Maintainers      []*Maintainer    `json:"maintainers" yaml:"maintainers"`
+	LatestVersion    string           `json:"latestVersion" yaml:"latestVersion"`
 	Rules            []*FalcoRuleData `json:"rules" yaml:"rules"`
 }
 
-func (r *Resource) GenerateRulesForHelmChart() []byte {
+func (r *Resource) GenerateRulesForHelmChart(version string) ([]byte, error) {
 	raw := make(map[string]map[string]string)
 	raw["customRules"] = map[string]string{}
 
+	version = r.getLatestVersion(version)
+
+	found := false
 	for _, rule := range r.Rules {
-		raw["customRules"]["rules-"+r.ID+".yaml"] += rule.Raw
+		if rule.Version == version {
+			raw["customRules"]["rules-"+r.ID+".yaml"] += rule.Raw
+			found = true
+		}
+	}
+
+	if !found {
+		return nil, fmt.Errorf("not found")
 	}
 
 	result, _ := yaml.Marshal(raw)
-	return result
+	return result, nil
+}
+
+func (r *Resource) getLatestVersion(requestedVersion string) string {
+	if requestedVersion != "" {
+		return requestedVersion
+	}
+
+	if r.LatestVersion != "" {
+		// If version not specified, take from resource.latestVersion
+		return r.LatestVersion
+	}
+
+	// As fallback, take version from last defined rule
+	return r.Rules[len(r.Rules)-1].Version
 }
 
 type resourceAlias Resource // Avoid stack overflow while marshalling / unmarshalling
@@ -81,7 +106,10 @@ type Maintainer struct {
 }
 
 type FalcoRuleData struct {
-	Raw string `json:"raw" yaml:"raw"`
+	Version            string `json:"version" yaml:"version"`
+	TargetFalcoVersion string `json:"targetFalcoVersion" yaml:"targetFalcoVersion"`
+	Description        string `json:"description" yaml:"description"`
+	Raw                string `json:"raw" yaml:"raw"`
 }
 
 func (r *Resource) Validate() error {

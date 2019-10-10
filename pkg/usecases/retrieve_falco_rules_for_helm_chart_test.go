@@ -1,45 +1,21 @@
 package usecases
 
 import (
-	"github.com/falcosecurity/cloud-native-security-hub/pkg/resource"
-	"github.com/stretchr/testify/assert"
 	"testing"
-)
 
-func memoryResourceRepositoryWithRules() resource.Repository {
-	return resource.NewMemoryRepository(
-		[]*resource.Resource{
-			{
-				ID:     "nginx",
-				Kind:   resource.FALCO_RULE,
-				Name:   "Falco profile for Nginx",
-				Vendor: "Nginx",
-				Rules: []*resource.FalcoRuleData{
-					{Raw: "nginxRule"},
-				},
-			},
-			{
-				ID:     "traefik",
-				Kind:   "GrafanaDashboard",
-				Name:   "Grafana Dashboard for Traefik",
-				Vendor: "Traefik",
-				Rules: []*resource.FalcoRuleData{
-					{Raw: "traefikRule"},
-				},
-			},
-		},
-	)
-}
+	"github.com/stretchr/testify/assert"
+)
 
 func TestReturnsFalcoRulesForHelmChart(t *testing.T) {
 	useCase := RetrieveFalcoRulesForHelmChart{
 		ResourceRepository: memoryResourceRepositoryWithRules(),
 		ResourceID:         "nginx",
+		RuleVersion:        "0.0.1",
 	}
 
 	result, _ := useCase.Execute()
 	expected := `customRules:
-  rules-nginx.yaml: nginxRule
+  rules-nginx.yaml: nginxRule1
 `
 
 	assert.Equal(t, expected, string(result))
@@ -49,6 +25,18 @@ func TestFalcoRulesForHelmChartReturnsNotFound(t *testing.T) {
 	useCase := RetrieveFalcoRulesForHelmChart{
 		ResourceRepository: memoryResourceRepositoryWithRules(),
 		ResourceID:         "notFound",
+	}
+
+	_, err := useCase.Execute()
+
+	assert.Error(t, err)
+}
+
+func TestFalcoRulesForHelmChartWrongVersionReturnsNotFound(t *testing.T) {
+	useCase := RetrieveFalcoRulesForHelmChart{
+		ResourceRepository: memoryResourceRepositoryWithRules(),
+		ResourceID:         "nginx",
+		RuleVersion:        "notfound",
 	}
 
 	_, err := useCase.Execute()

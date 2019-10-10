@@ -13,7 +13,17 @@ maintainers:
     email: nestor.salceda@sysdig.com
   - name: fedebarcelona
     email: fede.barcelona@sysdig.com
+latestVersion: 1.0.1
 rules:
-  - raw: |
+  - version: 1.0.0
+    targetFalcoVersion: 0.17
+    description: First version
+    raw: |
+      - macro: mongo_consider_syscalls
+        etc: etc
+  - version: 1.0.1
+    targetFalcoVersion: 0.18
+    description: New version for Falco 0.18
+    raw: |
       - macro: mongo_consider_syscalls
         condition: (evt.num < 0)

@@ -10,7 +10,8 @@ import (
 type Factory interface {
 	NewRetrieveAllResourcesUseCase() *RetrieveAllResources
 	NewRetrieveOneResourceUseCase(resourceID string) *RetrieveOneResource
-	NewRetrieveFalcoRulesForHelmChartUseCase(resourceID string) *RetrieveFalcoRulesForHelmChart
+	NewRetrieveFalcoRulesForHelmChartUseCase(resourceID, ruleVersion string) *RetrieveFalcoRulesForHelmChart
+	NewRetrieveFalcoRulesForHelmChartLatestVersionUseCase(resourceID string) *RetrieveFalcoRulesForHelmChartLatestVersion
 	NewRetrieveAllVendorsUseCase() *RetrieveAllVendors
 	NewRetrieveOneVendorUseCase(vendorID string) *RetrieveOneVendor
 	NewRetrieveAllResourcesFromVendorUseCase(vendorID string) *RetrieveAllResourcesFromVendor
@@ -44,8 +45,16 @@ func (f *factory) NewRetrieveOneResourceUseCase(resourceID string) *RetrieveOneR
 	}
 }
 
-func (f *factory) NewRetrieveFalcoRulesForHelmChartUseCase(resourceID string) *RetrieveFalcoRulesForHelmChart {
+func (f *factory) NewRetrieveFalcoRulesForHelmChartUseCase(resourceID, ruleVersion string) *RetrieveFalcoRulesForHelmChart {
 	return &RetrieveFalcoRulesForHelmChart{
+		ResourceRepository: f.resourceRepository,
+		ResourceID:         resourceID,
+		RuleVersion:        ruleVersion,
+	}
+}
+
+func (f *factory) NewRetrieveFalcoRulesForHelmChartLatestVersionUseCase(resourceID string) *RetrieveFalcoRulesForHelmChartLatestVersion {
+	return &RetrieveFalcoRulesForHelmChartLatestVersion{
 		ResourceRepository: f.resourceRepository,
 		ResourceID:         resourceID,
 	}

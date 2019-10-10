@@ -2,16 +2,15 @@ package usecases
 
 import "github.com/falcosecurity/cloud-native-security-hub/pkg/resource"
 
-type RetrieveFalcoRulesForHelmChart struct {
+type RetrieveFalcoRulesForHelmChartLatestVersion struct {
 	ResourceRepository resource.Repository
 	ResourceID         string
-	RuleVersion        string
 }
 
-func (useCase *RetrieveFalcoRulesForHelmChart) Execute() ([]byte, error) {
+func (useCase *RetrieveFalcoRulesForHelmChartLatestVersion) Execute() ([]byte, error) {
 	res, err := useCase.ResourceRepository.FindById(useCase.ResourceID)
 	if err != nil {
 		return nil, err
 	}
-	return res.GenerateRulesForHelmChart(useCase.RuleVersion)
+	return res.GenerateRulesForHelmChart("")
 }
