@@ -35,6 +35,11 @@ func TestRetrieveFalcoRulesForHelmChartHandlerReturnsHTTPOk(t *testing.T) {
 	testRetrieveAllReturnsHTTPOk(t, "/resources/"+apacheID+"/custom-rules.yaml")
 }
 
+func TestRetrieveFalcoRulesForHelmChartVersionHandlerReturnsHTTPOk(t *testing.T) {
+	apacheID := "apache"
+	testRetrieveAllReturnsHTTPOk(t, "/resources/"+apacheID+"/1.0.0/custom-rules.yaml")
+}
+
 func TestRetrieveAllVendorsHandlerReturnsHTTPOk(t *testing.T) {
 	testRetrieveAllReturnsHTTPOk(t, "/vendors")
 }
@@ -114,9 +119,37 @@ func TestRetrieveFalcoRulesForHelmChartReturnsContent(t *testing.T) {
 	assert.Equal(t, expectedResult, string(recorder.Body.Bytes()))
 }
 
+func TestRetrieveFalcoRulesForHelmChartVersionReturnsContent(t *testing.T) {
+	apacheID := "apache"
+	request, _ := http.NewRequest("GET", "/resources/"+apacheID+"/1.0.0/custom-rules.yaml", nil)
+
+	recorder := httptest.NewRecorder()
+	os.Setenv("RESOURCES_PATH", "../test/fixtures/resources")
+	os.Setenv("VENDOR_PATH", "../test/fixtures/vendors")
+	router := NewRouter()
+	router.ServeHTTP(recorder, request)
+
+	expectedResult := `customRules:
+  rules-apache.yaml: |-
+    - macro: apache_consider_syscalls
+      condition: (evt.num < 0)
+`
+	assert.Equal(t, expectedResult, string(recorder.Body.Bytes()))
+}
+
 func TestRetrieveFalcoRulesForHelmChartReturnsAYAMLResponse(t *testing.T) {
 	apacheID := "apache"
 	request, _ := http.NewRequest("GET", "/resources/"+apacheID+"/custom-rules.yaml", nil)
+	recorder := httptest.NewRecorder()
+
+	router := NewRouter()
+	router.ServeHTTP(recorder, request)
+	assert.Equal(t, "application/x-yaml", recorder.HeaderMap["Content-Type"][0])
+}
+
+func TestRetrieveFalcoRulesForHelmChartVersionReturnsAYAMLResponse(t *testing.T) {
+	apacheID := "apache"
+	request, _ := http.NewRequest("GET", "/resources/"+apacheID+"/1.0.0/custom-rules.yaml", nil)
 	recorder := httptest.NewRecorder()
 
 	router := NewRouter()

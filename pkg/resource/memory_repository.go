@@ -3,6 +3,8 @@ package resource
 import (
 	"fmt"
 	"strings"
+
+	"github.com/Masterminds/semver"
 )
 
 type MemoryRepository struct {
@@ -20,9 +22,37 @@ func (r *MemoryRepository) FindAll() ([]*Resource, error) {
 }
 
 func (r *MemoryRepository) FindById(id string) (*Resource, error) {
+	version, err := r.getLatestVersionForId(id)
+	if err != nil {
+		return nil, err
+	}
+	return r.FindByIdAndVersion(id, version)
+}
+
+func (r *MemoryRepository) getLatestVersionForId(id string) (version string, err error) {
+	idToFind := strings.ToLower(id)
+
+	var latestVersion *semver.Version
+	for _, resource := range r.resources {
+		if resource.ID == idToFind {
+			resourceVersion, err := semver.NewVersion(resource.Version)
+
+			if err == nil && (latestVersion == nil || resourceVersion.GreaterThan(latestVersion)) {
+				latestVersion = resourceVersion
+			}
+		}
+	}
+
+	if latestVersion == nil {
+		return "", fmt.Errorf("not found")
+	}
+	return latestVersion.String(), nil
+}
+
+func (r *MemoryRepository) FindByIdAndVersion(id, version string) (*Resource, error) {
 	idToFind := strings.ToLower(id)
 	for _, res := range r.resources {
-		if res.ID == idToFind {
+		if res.ID == idToFind && res.Version == version {
 			return res, nil
 		}
 	}

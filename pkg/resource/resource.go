@@ -24,6 +24,7 @@ type Resource struct {
 	Icon             string           `json:"icon" yaml:"icon"`
 	Website          string           `json:"website" yaml:"website"`
 	Maintainers      []*Maintainer    `json:"maintainers" yaml:"maintainers"`
+	Version          string           `json:"version" yaml:"version"`
 	Rules            []*FalcoRuleData `json:"rules" yaml:"rules"`
 }
 

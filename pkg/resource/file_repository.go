@@ -2,11 +2,13 @@ package resource
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/Masterminds/semver"
+	"gopkg.in/yaml.v2"
 )
 
 type fileRepository struct {
@@ -30,6 +32,44 @@ func (f *fileRepository) FindAll() (resources []*Resource, err error) {
 }
 
 func (f *fileRepository) FindById(id string) (res *Resource, err error) {
+	latestVersion, err := f.getLatestVersionForId(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return f.FindByIdAndVersion(id, latestVersion)
+}
+
+func (f *fileRepository) getLatestVersionForId(id string) (version string, err error) {
+	f.resourcesCacheFilledOnce.Do(f.fillResourcesCache)
+	idToFind := strings.ToLower(id)
+
+	if f.resourcesCacheError != nil {
+		return "", f.resourcesCacheError
+	}
+
+	if len(f.resourcesCache) == 0 {
+		return "", fmt.Errorf("no resources")
+	}
+
+	var latestVersion *semver.Version
+	for _, resource := range f.resourcesCache {
+		if resource.ID == idToFind {
+			resourceVersion, err := semver.NewVersion(resource.Version)
+
+			if err == nil && (latestVersion == nil || resourceVersion.GreaterThan(latestVersion)) {
+				latestVersion = resourceVersion
+			}
+		}
+	}
+
+	if latestVersion == nil {
+		return "", fmt.Errorf("not found")
+	}
+	return latestVersion.String(), nil
+}
+
+func (f *fileRepository) FindByIdAndVersion(id, version string) (res *Resource, err error) {
 	f.resourcesCacheFilledOnce.Do(f.fillResourcesCache)
 	idToFind := strings.ToLower(id)
 
@@ -42,7 +82,7 @@ func (f *fileRepository) FindById(id string) (res *Resource, err error) {
 	}
 
 	for _, resource := range f.resourcesCache {
-		if resource.ID == idToFind {
+		if resource.ID == idToFind && resource.Version == version {
 			res = resource
 			return
 		}

@@ -13,6 +13,7 @@ maintainers:
     email: nestor.salceda@sysdig.com
   - name: fedebarcelona
     email: fede.barcelona@sysdig.com
+version: 1.0.0
 rules:
   - raw: |
       - macro: mongo_consider_syscalls

@@ -12,8 +12,10 @@ import (
 type HandlerRepository interface {
 	notFound() http.HandlerFunc
 	retrieveAllResourcesHandler(writer http.ResponseWriter, request *http.Request, _ httprouter.Params)
-	retrieveOneResourcesHandler(writer http.ResponseWriter, request *http.Request, params httprouter.Params)
+	retrieveOneResourceHandler(writer http.ResponseWriter, request *http.Request, params httprouter.Params)
+	retrieveOneResourceVersionHandler(writer http.ResponseWriter, request *http.Request, params httprouter.Params)
 	retrieveFalcoRulesForHelmChartHandler(writer http.ResponseWriter, request *http.Request, params httprouter.Params)
+	retrieveFalcoRulesForHelmChartVersionHandler(writer http.ResponseWriter, request *http.Request, params httprouter.Params)
 	retrieveAllVendorsHandler(writer http.ResponseWriter, request *http.Request, _ httprouter.Params)
 	retrieveOneVendorsHandler(writer http.ResponseWriter, request *http.Request, params httprouter.Params)
 	retrieveAllResourcesFromVendorHandler(writer http.ResponseWriter, request *http.Request, params httprouter.Params)
@@ -63,8 +65,30 @@ func (h *handlerRepository) retrieveAllResourcesHandler(writer http.ResponseWrit
 	json.NewEncoder(writer).Encode(resources)
 }
 
-func (h *handlerRepository) retrieveOneResourcesHandler(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+func (h *handlerRepository) retrieveOneResourceHandler(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 	useCase := h.factory.NewRetrieveOneResourceUseCase(params.ByName("resource"))
+	resources, err := useCase.Execute()
+	if err != nil {
+		writer.WriteHeader(500)
+		h.logRequest(request, 500)
+		writer.Write([]byte(err.Error()))
+		return
+	}
+	writer.Header().Set("Content-Type", "application/json")
+	h.logRequest(request, 200)
+	json.NewEncoder(writer).Encode(resources)
+}
+
+func (h *handlerRepository) retrieveOneResourceVersionHandler(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+
+	version := params.ByName("version")
+	if version == "custom-rules.yaml" {
+		// Hack for route collision in router.go
+		h.retrieveFalcoRulesForHelmChartHandler(writer, request, params)
+		return
+	}
+
+	useCase := h.factory.NewRetrieveOneResourceVersionUseCase(params.ByName("resource"), version)
 	resources, err := useCase.Execute()
 	if err != nil {
 		writer.WriteHeader(500)
@@ -79,6 +103,20 @@ func (h *handlerRepository) retrieveOneResourcesHandler(writer http.ResponseWrit
 
 func (h *handlerRepository) retrieveFalcoRulesForHelmChartHandler(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 	useCase := h.factory.NewRetrieveFalcoRulesForHelmChartUseCase(params.ByName("resource"))
+	content, err := useCase.Execute()
+	if err != nil {
+		writer.WriteHeader(500)
+		h.logRequest(request, 500)
+		writer.Write([]byte(err.Error()))
+		return
+	}
+	writer.Header().Set("Content-Type", "application/x-yaml")
+	h.logRequest(request, 200)
+	writer.Write(content)
+}
+
+func (h *handlerRepository) retrieveFalcoRulesForHelmChartVersionHandler(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	useCase := h.factory.NewRetrieveFalcoRulesForHelmChartVersionUseCase(params.ByName("resource"), params.ByName("version"))
 	content, err := useCase.Execute()
 	if err != nil {
 		writer.WriteHeader(500)

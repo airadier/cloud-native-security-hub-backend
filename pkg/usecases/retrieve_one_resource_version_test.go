@@ -1,20 +1,21 @@
 package usecases
 
 import (
+	"testing"
+
 	"github.com/falcosecurity/cloud-native-security-hub/pkg/resource"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
-func memoryResourceRepository() resource.Repository {
+func memoryResourceRepositoryWithVersions() resource.Repository {
 	return resource.NewMemoryRepository(
 		[]*resource.Resource{
 			&resource.Resource{
 				Kind:    resource.FALCO_RULE,
-				Name:    "Falco profile for Nginx v0.9.0",
+				Name:    "Falco profile for Nginx v1.0.0",
 				Vendor:  "Nginx",
 				ID:      "nginx",
-				Version: "0.9.0",
+				Version: "1.0.0",
 			},
 			&resource.Resource{
 				Kind:    resource.FALCO_RULE,
@@ -22,13 +23,6 @@ func memoryResourceRepository() resource.Repository {
 				Vendor:  "Nginx",
 				ID:      "nginx",
 				Version: "1.0.1",
-			},
-			&resource.Resource{
-				Kind:    resource.FALCO_RULE,
-				Name:    "Falco profile for Nginx v1.0.0",
-				Vendor:  "Nginx",
-				ID:      "nginx",
-				Version: "1.0.0",
 			},
 			&resource.Resource{
 				Kind:   resource.FALCO_RULE,
@@ -40,27 +34,29 @@ func memoryResourceRepository() resource.Repository {
 	)
 }
 
-func TestReturnsOneResource(t *testing.T) {
-	useCase := RetrieveOneResource{
-		ResourceRepository: memoryResourceRepository(),
+func TestReturnsOneResourceVersion(t *testing.T) {
+	useCase := RetrieveOneResourceVersion{
+		ResourceRepository: memoryResourceRepositoryWithVersions(),
 		ResourceID:         "nginx",
+		ResourceVersion:    "1.0.0",
 	}
 
 	res, _ := useCase.Execute()
 
 	assert.Equal(t, &resource.Resource{
 		Kind:    resource.FALCO_RULE,
-		Name:    "Falco profile for Nginx v1.0.1",
+		Name:    "Falco profile for Nginx v1.0.0",
 		Vendor:  "Nginx",
 		ID:      "nginx",
-		Version: "1.0.1",
+		Version: "1.0.0",
 	}, res)
 }
 
-func TestReturnsResourceNotFound(t *testing.T) {
-	useCase := RetrieveOneResource{
-		ResourceRepository: memoryResourceRepository(),
-		ResourceID:         "notFound",
+func TestReturnsResourceVersionNotFound(t *testing.T) {
+	useCase := RetrieveOneResourceVersion{
+		ResourceRepository: memoryResourceRepositoryWithVersions(),
+		ResourceID:         "nginx",
+		ResourceVersion:    "notFound",
 	}
 
 	_, err := useCase.Execute()

@@ -10,19 +10,21 @@ func memoryResourceRepositoryWithRules() resource.Repository {
 	return resource.NewMemoryRepository(
 		[]*resource.Resource{
 			{
-				ID:     "nginx",
-				Kind:   resource.FALCO_RULE,
-				Name:   "Falco profile for Nginx",
-				Vendor: "Nginx",
+				ID:      "nginx",
+				Kind:    resource.FALCO_RULE,
+				Name:    "Falco profile for Nginx",
+				Vendor:  "Nginx",
+				Version: "1.0.0",
 				Rules: []*resource.FalcoRuleData{
 					{Raw: "nginxRule"},
 				},
 			},
 			{
-				ID:     "traefik",
-				Kind:   "GrafanaDashboard",
-				Name:   "Grafana Dashboard for Traefik",
-				Vendor: "Traefik",
+				ID:      "traefik",
+				Kind:    "GrafanaDashboard",
+				Name:    "Grafana Dashboard for Traefik",
+				Vendor:  "Traefik",
+				Version: "1.0.0",
 				Rules: []*resource.FalcoRuleData{
 					{Raw: "traefikRule"},
 				},
