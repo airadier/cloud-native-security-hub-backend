@@ -1,9 +1,10 @@
 package usecases
 
 import (
+	"testing"
+
 	"github.com/falcosecurity/cloud-native-security-hub/pkg/resource"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func memoryResourceRepositoryWithRules() resource.Repository {
@@ -12,11 +13,21 @@ func memoryResourceRepositoryWithRules() resource.Repository {
 			{
 				ID:      "nginx",
 				Kind:    resource.FALCO_RULE,
-				Name:    "Falco profile for Nginx",
+				Name:    "Falco profile for Nginx v1",
 				Vendor:  "Nginx",
 				Version: "1.0.0",
 				Rules: []*resource.FalcoRuleData{
-					{Raw: "nginxRule"},
+					{Raw: "nginxRuleV1"},
+				},
+			},
+			{
+				ID:      "nginx",
+				Kind:    resource.FALCO_RULE,
+				Name:    "Falco profile for Nginx v2",
+				Vendor:  "Nginx",
+				Version: "2.0.0",
+				Rules: []*resource.FalcoRuleData{
+					{Raw: "nginxRuleV2"},
 				},
 			},
 			{
@@ -41,7 +52,7 @@ func TestReturnsFalcoRulesForHelmChart(t *testing.T) {
 
 	result, _ := useCase.Execute()
 	expected := `customRules:
-  rules-nginx.yaml: nginxRule
+  rules-nginx.yaml: nginxRuleV2
 `
 
 	assert.Equal(t, expected, string(result))

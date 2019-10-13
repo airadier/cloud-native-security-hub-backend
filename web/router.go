@@ -24,12 +24,12 @@ func NewRouterWithLogger(logger *log.Logger) http.Handler {
 
 func registerOn(router *httprouter.Router, logger *log.Logger) {
 	h := NewHandlerRepository(logger)
-	router.GET("/resources", h.retrieveAllResourcesHandler)
+	router.GET("/resources", h.retrieveAllResourcesLatestVersionsHandler)
 	router.GET("/resources/:resource", h.retrieveOneResourceHandler)
-	router.GET("/resources/:resource/:version/custom-rules.yaml", h.retrieveFalcoRulesForHelmChartVersionHandler)
-	router.GET("/resources/:resource/:version", h.retrieveOneResourceVersionHandler)
-	//Collision with previous routes!! Hack: we handle specific case when version == "custom-rules-yaml"?
-	//router.GET("/resources/:resource/custom-rules.yaml", h.retrieveFalcoRulesForHelmChartHandler)
+	router.GET("/resources/:resource/custom-rules.yaml", h.retrieveFalcoRulesForHelmChartHandler)
+	router.GET("/resources/:resource/versions", h.retrieveAllResourceVersionsHandler)
+	router.GET("/resources/:resource/versions/:version/custom-rules.yaml", h.retrieveFalcoRulesForHelmChartVersionHandler)
+	router.GET("/resources/:resource/versions/:version", h.retrieveOneResourceVersionHandler)
 	router.GET("/vendors", h.retrieveAllVendorsHandler)
 	router.GET("/vendors/:vendor", h.retrieveOneVendorsHandler)
 	router.GET("/vendors/:vendor/resources", h.retrieveAllResourcesFromVendorHandler)

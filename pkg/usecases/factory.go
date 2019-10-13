@@ -1,14 +1,17 @@
 package usecases
 
 import (
-	"github.com/falcosecurity/cloud-native-security-hub/pkg/resource"
-	"github.com/falcosecurity/cloud-native-security-hub/pkg/vendor"
 	"log"
 	"os"
+
+	"github.com/falcosecurity/cloud-native-security-hub/pkg/resource"
+	"github.com/falcosecurity/cloud-native-security-hub/pkg/vendor"
 )
 
 type Factory interface {
 	NewRetrieveAllResourcesUseCase() *RetrieveAllResources
+	NewRetrieveAllResourcesLatestVersionsUseCase() *RetrieveAllResourcesLatestVersions
+	NewRetrieveAllResourceVersionsUseCase(resourceID string) *RetrieveAllResourceVersions
 	NewRetrieveOneResourceUseCase(resourceID string) *RetrieveOneResource
 	NewRetrieveOneResourceVersionUseCase(resourceID, resourceVersion string) *RetrieveOneResourceVersion
 	NewRetrieveFalcoRulesForHelmChartUseCase(resourceID string) *RetrieveFalcoRulesForHelmChart
@@ -36,6 +39,19 @@ type factory struct {
 func (f *factory) NewRetrieveAllResourcesUseCase() *RetrieveAllResources {
 	return &RetrieveAllResources{
 		ResourceRepository: f.resourceRepository,
+	}
+}
+
+func (f *factory) NewRetrieveAllResourcesLatestVersionsUseCase() *RetrieveAllResourcesLatestVersions {
+	return &RetrieveAllResourcesLatestVersions{
+		ResourceRepository: f.resourceRepository,
+	}
+}
+
+func (f *factory) NewRetrieveAllResourceVersionsUseCase(resourceID string) *RetrieveAllResourceVersions {
+	return &RetrieveAllResourceVersions{
+		ResourceRepository: f.resourceRepository,
+		ResourceID:         resourceID,
 	}
 }
 

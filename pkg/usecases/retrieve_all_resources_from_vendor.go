@@ -2,9 +2,10 @@ package usecases
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/falcosecurity/cloud-native-security-hub/pkg/resource"
 	"github.com/falcosecurity/cloud-native-security-hub/pkg/vendor"
-	"strings"
 )
 
 type RetrieveAllResourcesFromVendor struct {
@@ -20,7 +21,7 @@ func (useCase *RetrieveAllResourcesFromVendor) Execute() (res []*resource.Resour
 	}
 	vendorName := strings.ToLower(vendor.Name)
 
-	resources, err := useCase.ResourceRepository.FindAll()
+	resources, err := useCase.ResourceRepository.FindAllLatestVersions()
 	if err != nil {
 		return
 	}

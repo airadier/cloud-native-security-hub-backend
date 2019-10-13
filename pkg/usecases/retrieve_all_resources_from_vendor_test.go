@@ -1,22 +1,30 @@
 package usecases
 
 import (
+	"testing"
+
 	"github.com/falcosecurity/cloud-native-security-hub/pkg/resource"
 	"github.com/falcosecurity/cloud-native-security-hub/pkg/vendor"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func memoryResourceRepositoryFromVendor() resource.Repository {
 	return resource.NewMemoryRepository(
 		[]*resource.Resource{
 			{
-				Name:   "Falco profile for Nginx",
-				Vendor: "Nginx",
+				Name:    "Falco profile for Nginx v1",
+				Vendor:  "Nginx",
+				Version: "1.0.0",
 			},
 			{
-				Name:   "Grafana Dashboard for Traefik",
-				Vendor: "Traefik",
+				Name:    "Falco profile for Nginx v2",
+				Vendor:  "Nginx",
+				Version: "2.0.0",
+			},
+			{
+				Name:    "Grafana Dashboard for Traefik v1",
+				Vendor:  "Traefik",
+				Version: "1.0.0",
 			},
 		},
 	)
@@ -52,8 +60,9 @@ func TestReturnsAllResourcesFromVendor(t *testing.T) {
 
 	assert.Equal(t, []*resource.Resource{
 		{
-			Name:   "Falco profile for Nginx",
-			Vendor: "Nginx",
+			Name:    "Falco profile for Nginx v2",
+			Vendor:  "Nginx",
+			Version: "2.0.0",
 		},
 	}, resources)
 }

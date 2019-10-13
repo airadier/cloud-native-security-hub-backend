@@ -18,3 +18,4 @@ rules:
   - raw: |
       - macro: apache_consider_syscalls
         condition: (evt.num < 0)
+        version: 1.0.0

@@ -2,63 +2,86 @@ package resource
 
 import (
 	"fmt"
+	"sort"
 	"strings"
-
-	"github.com/Masterminds/semver"
 )
 
 type MemoryRepository struct {
-	resources []*Resource
+	resources map[string][]*Resource
 }
 
+// NewMemoryRepository created a new memory repository.
+// Please provide resources grouped by ID and sorted newer versions forst
 func NewMemoryRepository(resources []*Resource) Repository {
-	return &MemoryRepository{
-		resources: resources,
+	r := &MemoryRepository{resources: make(map[string][]*Resource)}
+	for _, res := range resources {
+		r.Add(*res)
 	}
+
+	return r
 }
 
 func (r *MemoryRepository) FindAll() ([]*Resource, error) {
-	return r.resources, nil
-}
-
-func (r *MemoryRepository) FindById(id string) (*Resource, error) {
-	version, err := r.getLatestVersionForId(id)
-	if err != nil {
-		return nil, err
+	resources := make([]*Resource, 0)
+	for _, res := range r.resources {
+		resources = append(resources, res...)
 	}
-	return r.FindByIdAndVersion(id, version)
+
+	return resources, nil
 }
 
-func (r *MemoryRepository) getLatestVersionForId(id string) (version string, err error) {
+func (r *MemoryRepository) FindAllLatestVersions() ([]*Resource, error) {
+	resources := make([]*Resource, 0)
+	for _, res := range r.resources {
+		resources = append(resources, res[0])
+	}
+
+	return resources, nil
+}
+
+func (r *MemoryRepository) FindById(id string) ([]*Resource, error) {
 	idToFind := strings.ToLower(id)
 
-	var latestVersion *semver.Version
-	for _, resource := range r.resources {
-		if resource.ID == idToFind {
-			resourceVersion, err := semver.NewVersion(resource.Version)
-
-			if err == nil && (latestVersion == nil || resourceVersion.GreaterThan(latestVersion)) {
-				latestVersion = resourceVersion
-			}
-		}
+	if resources, ok := r.resources[idToFind]; ok {
+		return resources, nil
 	}
 
-	if latestVersion == nil {
-		return "", fmt.Errorf("not found")
+	return nil, fmt.Errorf("not found")
+}
+
+func (r *MemoryRepository) FindByIdLatestVersion(id string) (*Resource, error) {
+	idToFind := strings.ToLower(id)
+
+	if resources, ok := r.resources[idToFind]; ok {
+		return resources[0], nil
 	}
-	return latestVersion.String(), nil
+
+	return nil, fmt.Errorf("not found")
 }
 
 func (r *MemoryRepository) FindByIdAndVersion(id, version string) (*Resource, error) {
 	idToFind := strings.ToLower(id)
-	for _, res := range r.resources {
-		if res.ID == idToFind && res.Version == version {
-			return res, nil
+
+	if resources, ok := r.resources[idToFind]; ok {
+		for _, res := range resources {
+			if res.Version == version {
+				return res, nil
+			}
 		}
 	}
+
 	return nil, fmt.Errorf("not found")
 }
 
 func (r *MemoryRepository) Add(resource Resource) {
-	r.resources = append(r.resources, &resource)
+	idToFind := strings.ToLower(resource.ID)
+
+	if resourceList, ok := r.resources[idToFind]; ok {
+		r.resources[idToFind] = append(resourceList, &resource)
+	} else {
+		r.resources[idToFind] = make([]*Resource, 1)
+		r.resources[idToFind][0] = &resource
+	}
+
+	sort.Sort(ByVersion(r.resources[idToFind]))
 }

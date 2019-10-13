@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/falcosecurity/cloud-native-security-hub/pkg/resource"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+
+	"github.com/falcosecurity/cloud-native-security-hub/pkg/resource"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMain(m *testing.M) {
@@ -30,6 +31,16 @@ func TestRetrieveOneResourceHandlerReturnsHTTPOk(t *testing.T) {
 	testRetrieveAllReturnsHTTPOk(t, "/resources/"+apacheID)
 }
 
+func TestRetrieveResourceVersionsHandlerReturnsHTTPOk(t *testing.T) {
+	apacheID := "apache"
+	testRetrieveAllReturnsHTTPOk(t, "/resources/"+apacheID+"/versions")
+}
+
+func TestRetrieveOneResourceVersionHandlerReturnsHTTPOk(t *testing.T) {
+	apacheID := "apache"
+	testRetrieveAllReturnsHTTPOk(t, "/resources/"+apacheID+"/versions/1.0.0")
+}
+
 func TestRetrieveFalcoRulesForHelmChartHandlerReturnsHTTPOk(t *testing.T) {
 	apacheID := "apache"
 	testRetrieveAllReturnsHTTPOk(t, "/resources/"+apacheID+"/custom-rules.yaml")
@@ -37,7 +48,7 @@ func TestRetrieveFalcoRulesForHelmChartHandlerReturnsHTTPOk(t *testing.T) {
 
 func TestRetrieveFalcoRulesForHelmChartVersionHandlerReturnsHTTPOk(t *testing.T) {
 	apacheID := "apache"
-	testRetrieveAllReturnsHTTPOk(t, "/resources/"+apacheID+"/1.0.0/custom-rules.yaml")
+	testRetrieveAllReturnsHTTPOk(t, "/resources/"+apacheID+"/versions/1.0.0/custom-rules.yaml")
 }
 
 func TestRetrieveAllVendorsHandlerReturnsHTTPOk(t *testing.T) {
@@ -63,7 +74,27 @@ func testRetrieveAllReturnsHTTPOk(t *testing.T, path string) {
 }
 
 func TestRetrieveAllResourcesHandlerReturnsResourcesSerializedAsJSON(t *testing.T) {
-	testRetrieveallSerializedAsJSON(t, "/resources", "../test/fixtures/resources")
+
+	request, _ := http.NewRequest("GET", "/resources", nil)
+	recorder := httptest.NewRecorder()
+	router := NewRouter()
+	router.ServeHTTP(recorder, request)
+
+	expectedResult := `[{"id":"apache","kind":"FalcoRules","vendor":"Apache","name":"Apache","shortDescription":"","description":"# Apache Falco Rules\n","keywords":["web"],"icon":"https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Apache_HTTP_server_logo_%282016%29.svg/300px-Apache_HTTP_server_logo_%282016%29.svg.png","website":"","maintainers":[{"name":"nestorsalceda","email":"nestor.salceda@sysdig.com"},{"name":"fedebarcelona","email":"fede.barcelona@sysdig.com"}],"version":"1.0.1","rules":[{"raw":"- macro: apache_consider_syscalls\n  condition: (evt.num \u003c 0)\n  version: 1.0.1"}]},{"id":"mongodb","kind":"FalcoRules","vendor":"Mongo","name":"MongoDB","shortDescription":"","description":"# MongoDB Falco Rules\n","keywords":["database"],"icon":"https://upload.wikimedia.org/wikipedia/en/thumb/4/45/MongoDB-Logo.svg/2560px-MongoDB-Logo.svg.png","website":"","maintainers":[{"name":"nestorsalceda","email":"nestor.salceda@sysdig.com"},{"name":"fedebarcelona","email":"fede.barcelona@sysdig.com"}],"version":"1.0.0","rules":[{"raw":"- macro: mongo_consider_syscalls\n  condition: (evt.num \u003c 0)"}]}]
+`
+	assert.Equal(t, expectedResult, string(recorder.Body.Bytes()))
+}
+
+func TestRetrieveAllResourceVersionsHandlerReturnsResourcesSerializedAsJSON(t *testing.T) {
+	apacheID := "apache"
+	request, _ := http.NewRequest("GET", "/resources/"+apacheID+"/versions", nil)
+	recorder := httptest.NewRecorder()
+	router := NewRouter()
+	router.ServeHTTP(recorder, request)
+
+	expectedResult := `[{"id":"apache","kind":"FalcoRules","vendor":"Apache","name":"Apache","shortDescription":"","description":"# Apache Falco Rules\n","keywords":["web"],"icon":"https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Apache_HTTP_server_logo_%282016%29.svg/300px-Apache_HTTP_server_logo_%282016%29.svg.png","website":"","maintainers":[{"name":"nestorsalceda","email":"nestor.salceda@sysdig.com"},{"name":"fedebarcelona","email":"fede.barcelona@sysdig.com"}],"version":"1.0.1","rules":[{"raw":"- macro: apache_consider_syscalls\n  condition: (evt.num \u003c 0)\n  version: 1.0.1"}]},{"id":"apache","kind":"FalcoRules","vendor":"Apache","name":"Apache","shortDescription":"","description":"# Apache Falco Rules\n","keywords":["web"],"icon":"https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Apache_HTTP_server_logo_%282016%29.svg/300px-Apache_HTTP_server_logo_%282016%29.svg.png","website":"","maintainers":[{"name":"nestorsalceda","email":"nestor.salceda@sysdig.com"},{"name":"fedebarcelona","email":"fede.barcelona@sysdig.com"}],"version":"1.0.0","rules":[{"raw":"- macro: apache_consider_syscalls\n  condition: (evt.num \u003c 0)\n  version: 1.0.0"}]}]
+`
+	assert.Equal(t, expectedResult, string(recorder.Body.Bytes()))
 }
 
 func TestRetrieveAllVendorsHandlerReturnsResourcesSerializedAsJSON(t *testing.T) {
@@ -88,6 +119,7 @@ func testRetrieveallSerializedAsJSON(t *testing.T, urlPath, fixturesPath string)
 func TestRetrieveAllResourcesHandlerReturnsAJSONResponse(t *testing.T) {
 	testRetrieveAllHandlerReturnsAJSONResponse(t, "/resources")
 }
+
 func TestRetrieveAllVendorHandlerReturnsAJSONResponse(t *testing.T) {
 	testRetrieveAllHandlerReturnsAJSONResponse(t, "/vendors")
 }
@@ -115,13 +147,14 @@ func TestRetrieveFalcoRulesForHelmChartReturnsContent(t *testing.T) {
   rules-apache.yaml: |-
     - macro: apache_consider_syscalls
       condition: (evt.num < 0)
+      version: 1.0.1
 `
 	assert.Equal(t, expectedResult, string(recorder.Body.Bytes()))
 }
 
 func TestRetrieveFalcoRulesForHelmChartVersionReturnsContent(t *testing.T) {
 	apacheID := "apache"
-	request, _ := http.NewRequest("GET", "/resources/"+apacheID+"/1.0.0/custom-rules.yaml", nil)
+	request, _ := http.NewRequest("GET", "/resources/"+apacheID+"/versions/1.0.0/custom-rules.yaml", nil)
 
 	recorder := httptest.NewRecorder()
 	os.Setenv("RESOURCES_PATH", "../test/fixtures/resources")
@@ -133,6 +166,7 @@ func TestRetrieveFalcoRulesForHelmChartVersionReturnsContent(t *testing.T) {
   rules-apache.yaml: |-
     - macro: apache_consider_syscalls
       condition: (evt.num < 0)
+      version: 1.0.0
 `
 	assert.Equal(t, expectedResult, string(recorder.Body.Bytes()))
 }
@@ -149,7 +183,7 @@ func TestRetrieveFalcoRulesForHelmChartReturnsAYAMLResponse(t *testing.T) {
 
 func TestRetrieveFalcoRulesForHelmChartVersionReturnsAYAMLResponse(t *testing.T) {
 	apacheID := "apache"
-	request, _ := http.NewRequest("GET", "/resources/"+apacheID+"/1.0.0/custom-rules.yaml", nil)
+	request, _ := http.NewRequest("GET", "/resources/"+apacheID+"/versions/1.0.0/custom-rules.yaml", nil)
 	recorder := httptest.NewRecorder()
 
 	router := NewRouter()

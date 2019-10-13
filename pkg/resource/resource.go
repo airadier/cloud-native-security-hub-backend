@@ -3,8 +3,9 @@ package resource
 import (
 	"encoding/json"
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"strings"
+
+	"gopkg.in/yaml.v2"
 )
 
 type Kind string
@@ -99,6 +100,10 @@ func (r *Resource) Validate() error {
 	}
 	if r.Icon == "" {
 		errors = append(errors, "the resource must have a valid icon")
+	}
+
+	if r.Version == "" {
+		errors = append(errors, "the resource must have a version")
 	}
 
 	if len(errors) > 0 {

@@ -1,8 +1,9 @@
 package resource
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestResourceValidateOK(t *testing.T) {
@@ -43,6 +44,14 @@ func TestResourceValidateIcon(t *testing.T) {
 	assert.Error(t, resourceWithoutIcon.Validate())
 }
 
+func TestResourceValidateVersion(t *testing.T) {
+	resourceWithoutVersion := newResource()
+
+	resourceWithoutVersion.Version = ""
+
+	assert.Error(t, resourceWithoutVersion.Validate())
+}
+
 func newResource() Resource {
 	return Resource{
 		Kind:        "GrafanaDashboard",
@@ -52,6 +61,7 @@ func newResource() Resource {
 		Rules:       nil,
 		Keywords:    []string{"monitoring"},
 		Icon:        "https://sysdig.com/icon.png",
+		Version:     "1.0.0",
 		Maintainers: []*Maintainer{
 			{
 				Name:  "bencer",

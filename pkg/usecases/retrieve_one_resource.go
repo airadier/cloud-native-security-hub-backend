@@ -10,5 +10,5 @@ type RetrieveOneResource struct {
 }
 
 func (useCase *RetrieveOneResource) Execute() (res *resource.Resource, err error) {
-	return useCase.ResourceRepository.FindById(useCase.ResourceID)
+	return useCase.ResourceRepository.FindByIdLatestVersion(useCase.ResourceID)
 }
