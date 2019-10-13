@@ -3,6 +3,10 @@
 test:
 	go test -v ./...
 
+dbimport: cmd/dbimport/main.go pkg/dbmodel/dbmodel.go
+	go build -o dbimport cmd/dbimport/main.go
+
+
 dev:
 	RESOURCES_PATH=test/fixtures/resources VENDOR_PATH=test/fixtures/vendors go run cmd/server/main.go
 
