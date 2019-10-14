@@ -30,9 +30,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	importVendors(db, os.Args[1], os.Args[2])
+	importVendors(db, os.Args[1])
 
-	importNoVendorResources(db, os.Args[2])
+	importResources(db, os.Args[2])
 }
 
 func checkArgs() {
@@ -71,13 +71,8 @@ func checkDbParameters() (dbHost, dbPort, dbName, dbUser, dbPass string) {
 	return dbHost, dbPort, dbName, dbUser, dbPass
 }
 
-func importVendors(db *gorm.DB, vendorsPath, resourcesPath string) {
+func importVendors(db *gorm.DB, vendorsPath string) {
 	vendorsRepo, err := vendor.FromPath(vendorsPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resourcesRepo, err := resource.FromPath(resourcesPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -87,42 +82,30 @@ func importVendors(db *gorm.DB, vendorsPath, resourcesPath string) {
 		log.Fatal(err)
 	}
 
-	resources, err := resourcesRepo.FindAllLatestVersions()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	for _, vendor := range vendors {
-		if err := importVendor(db, vendor, resources, resourcesRepo); err != nil {
-			log.Fatal(err)
-		}
-	}
-}
+		dbVendor := &dbmodel.Vendor{}
 
-func importVendor(db *gorm.DB, vendor *vendor.Vendor, resources []*resource.Resource, repo resource.Repository) error {
-	dbVendor := &dbmodel.Vendor{}
-	dbVendor.Name = vendor.Name
-	dbVendor.Description = vendor.Description
-	dbVendor.Icon = vendor.Icon
-	dbVendor.Website = vendor.Website
-	dbVendor.Resources = make([]dbmodel.Resource, 0)
+		db.Where(&dbmodel.Vendor{Name: vendor.Name}).First(dbVendor)
 
-	for _, resource := range resources {
-		if resource.Vendor == vendor.Name {
-			res, err := dbmodel.FromResourceID(repo, resource.ID)
-			if err != nil {
-				return err
+		dbVendor.Name = vendor.Name
+		dbVendor.Description = vendor.Description
+		dbVendor.Icon = vendor.Icon
+		dbVendor.Website = vendor.Website
+		dbVendor.Resources = make([]dbmodel.Resource, 0)
+
+		if dbVendor.ID == 0 {
+			fmt.Printf("Importing vendor %s\n", vendor.Name)
+
+			if err := db.Create(dbVendor).Error; err != nil {
+				log.Fatal(err)
 			}
-
-			dbVendor.Resources = append(dbVendor.Resources, res)
+		} else {
+			fmt.Printf("Updating vendor %s\n", vendor.Name)
 		}
 	}
-
-	db.Create(dbVendor)
-
-	return nil
 }
-func importNoVendorResources(db *gorm.DB, resourcesPath string) {
+
+func importResources(db *gorm.DB, resourcesPath string) {
 	resourcesRepo, err := resource.FromPath(resourcesPath)
 	if err != nil {
 		log.Fatal(err)
@@ -134,13 +117,38 @@ func importNoVendorResources(db *gorm.DB, resourcesPath string) {
 	}
 
 	for _, resource := range resources {
-		if resource.Vendor == "" {
-			res, err := dbmodel.FromResourceID(resourcesRepo, resource.ID)
-			if err != nil {
-				log.Fatal(err)
-			}
+		fmt.Printf("Importing resource %s\n", resource.Name)
 
-			db.Create(res)
+		existingRes := &dbmodel.Resource{}
+		db.Where(&dbmodel.Resource{ResourceID: resource.ID}).First(existingRes)
+
+		if existingRes.ID != 0 {
+			fmt.Printf("Already exists, skipping\n")
+			continue
+		}
+
+		res, err := dbmodel.FromResourceID(resourcesRepo, resource.ID)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if err := db.Create(res).Error; err != nil {
+			log.Fatal(err)
+		}
+
+		if resource.Vendor != "" {
+
+			vendor := &dbmodel.Vendor{}
+			db.Where(&dbmodel.Vendor{Name: resource.Vendor}).First(vendor)
+
+			if vendor.ID == 0 {
+				vendor.Name = resource.Vendor
+				fmt.Printf("  New vendor %s\n", resource.Vendor)
+				db.Create(vendor)
+			} else {
+				fmt.Printf("  Adding to vendor %s\n", resource.Vendor)
+				db.Model(vendor).Association("Resources").Append(res)
+			}
 		}
 	}
 }

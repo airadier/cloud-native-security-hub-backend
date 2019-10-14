@@ -67,8 +67,8 @@ func MigrateModels(db *gorm.DB) {
 	db.Model(&FalcoRuleData{}).AddForeignKey("resource_version_id", "resource_versions(id)", "RESTRICT", "RESTRICT")
 }
 
-func FromResourceID(r resource.Repository, resourceId string) (Resource, error) {
-	dbr := Resource{}
+func FromResourceID(r resource.Repository, resourceId string) (*Resource, error) {
+	dbr := &Resource{}
 	dbr.ResourceID = resourceId
 	dbr.Versions = make([]ResourceVersion, 0)
 	resources, err := r.FindById(resourceId)
