@@ -31,7 +31,7 @@ type handlerRepository struct {
 
 func NewHandlerRepository(logger *log.Logger) HandlerRepository {
 	return &handlerRepository{
-		factory: usecases.NewFactory(),
+		factory: usecases.NewDBFactory(),
 		logger:  logger,
 	}
 }

@@ -11,7 +11,7 @@ import (
 type Kind string
 
 const (
-	FALCO_RULE Kind = "FalcoRule"
+	FALCO_RULE Kind = "FalcoRules"
 )
 
 type Resource struct {

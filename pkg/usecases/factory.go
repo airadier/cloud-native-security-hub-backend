@@ -24,8 +24,15 @@ type Factory interface {
 	NewVendorRepository() vendor.Repository
 }
 
-func NewFactory() Factory {
-	factory := &factory{}
+func NewFileFactory() Factory {
+	factory := &fileFactory{}
+	factory.resourceRepository = factory.NewResourcesRepository()
+	factory.vendorRepository = factory.NewVendorRepository()
+	return factory
+}
+
+func NewDBFactory() Factory {
+	factory := &dbFactory{}
 	factory.resourceRepository = factory.NewResourcesRepository()
 	factory.vendorRepository = factory.NewVendorRepository()
 	return factory
@@ -34,6 +41,14 @@ func NewFactory() Factory {
 type factory struct {
 	vendorRepository   vendor.Repository
 	resourceRepository resource.Repository
+}
+
+type fileFactory struct {
+	factory
+}
+
+type dbFactory struct {
+	factory
 }
 
 func (f *factory) NewRetrieveAllResourcesUseCase() *RetrieveAllResources {
@@ -106,7 +121,7 @@ func (f *factory) NewRetrieveAllResourcesFromVendorUseCase(vendorID string) *Ret
 	}
 }
 
-func (f *factory) NewResourcesRepository() resource.Repository {
+func (f *fileFactory) NewResourcesRepository() resource.Repository {
 	resourcesPath, ok := os.LookupEnv("RESOURCES_PATH")
 	if !ok {
 		log.Println("The RESOURCES_PATH env var is not set")
@@ -120,7 +135,7 @@ func (f *factory) NewResourcesRepository() resource.Repository {
 	return repo
 }
 
-func (f *factory) NewVendorRepository() vendor.Repository {
+func (f *fileFactory) NewVendorRepository() vendor.Repository {
 	vendorPath, ok := os.LookupEnv("VENDOR_PATH")
 	if !ok {
 		log.Println("The VENDOR_PATH env var is not set")
@@ -131,5 +146,85 @@ func (f *factory) NewVendorRepository() vendor.Repository {
 		log.Println("the resource repository of type file does not exist")
 		os.Exit(1)
 	}
+	return repo
+}
+
+func (f *dbFactory) NewResourcesRepository() resource.Repository {
+	dbHost, ok := os.LookupEnv("DB_HOST")
+	if !ok {
+		log.Println("The DB_HOST env var is not set")
+		os.Exit(1)
+	}
+
+	dbPort, ok := os.LookupEnv("DB_PORT")
+	if !ok {
+		log.Println("The DB_PORT env var is not set")
+		os.Exit(1)
+	}
+
+	dbName, ok := os.LookupEnv("DB_NAME")
+	if !ok {
+		log.Println("The DB_NAME env var is not set")
+		os.Exit(1)
+	}
+
+	dbUser, ok := os.LookupEnv("DB_USER")
+	if !ok {
+		log.Println("The DB_USER env var is not set")
+		os.Exit(1)
+	}
+
+	dbPass, ok := os.LookupEnv("DB_PASS")
+	if !ok {
+		log.Println("The DB_PASS env var is not set")
+		os.Exit(1)
+	}
+
+	repo, err := resource.FromPostgres(dbHost, dbPort, dbName, dbUser, dbPass)
+	if err != nil {
+		log.Printf("error creating DB resources repo: %s\n", err)
+		os.Exit(1)
+	}
+
+	return repo
+}
+
+func (f *dbFactory) NewVendorRepository() vendor.Repository {
+	dbHost, ok := os.LookupEnv("DB_HOST")
+	if !ok {
+		log.Println("The DB_HOST env var is not set")
+		os.Exit(1)
+	}
+
+	dbPort, ok := os.LookupEnv("DB_PORT")
+	if !ok {
+		log.Println("The DB_PORT env var is not set")
+		os.Exit(1)
+	}
+
+	dbName, ok := os.LookupEnv("DB_NAME")
+	if !ok {
+		log.Println("The DB_NAME env var is not set")
+		os.Exit(1)
+	}
+
+	dbUser, ok := os.LookupEnv("DB_USER")
+	if !ok {
+		log.Println("The DB_USER env var is not set")
+		os.Exit(1)
+	}
+
+	dbPass, ok := os.LookupEnv("DB_PASS")
+	if !ok {
+		log.Println("The DB_PASS env var is not set")
+		os.Exit(1)
+	}
+
+	repo, err := vendor.FromPostgres(dbHost, dbPort, dbName, dbUser, dbPass)
+	if err != nil {
+		log.Printf("error creating DB vendors repo: %s\n", err)
+		os.Exit(1)
+	}
+
 	return repo
 }

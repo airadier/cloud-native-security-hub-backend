@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/falcosecurity/cloud-native-security-hub/pkg/dbmodel"
 	"github.com/falcosecurity/cloud-native-security-hub/pkg/resource"
@@ -127,7 +128,7 @@ func importResources(db *gorm.DB, resourcesPath string) {
 			continue
 		}
 
-		res, err := dbmodel.FromResourceID(resourcesRepo, resource.ID)
+		res, err := dbResourceFromID(resourcesRepo, resource.ID)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -143,6 +144,7 @@ func importResources(db *gorm.DB, resourcesPath string) {
 
 			if vendor.ID == 0 {
 				vendor.Name = resource.Vendor
+				vendor.Resources = []dbmodel.Resource{*res}
 				fmt.Printf("  New vendor %s\n", resource.Vendor)
 				db.Create(vendor)
 			} else {
@@ -151,4 +153,46 @@ func importResources(db *gorm.DB, resourcesPath string) {
 			}
 		}
 	}
+}
+
+func dbResourceFromID(r resource.Repository, resourceId string) (*dbmodel.Resource, error) {
+	dbr := &dbmodel.Resource{}
+	dbr.ResourceID = resourceId
+	dbr.Versions = make([]dbmodel.ResourceVersion, 0)
+	resources, err := r.FindById(resourceId)
+	if err != nil {
+		return dbr, err
+	}
+	for _, res := range resources {
+		dbr.Versions = append(dbr.Versions, fromResource(res))
+	}
+
+	return dbr, nil
+}
+
+func fromResource(r *resource.Resource) dbmodel.ResourceVersion {
+	version := dbmodel.ResourceVersion{}
+	version.Name = r.Name
+	version.ShortDescription = r.ShortDescription
+	version.Description = r.Description
+	version.Keywords = strings.Join(r.Keywords, ",")
+	version.Icon = r.Icon
+	version.Website = r.Website
+	version.Version = r.Version
+
+	for _, m := range r.Maintainers {
+
+		version.Maintainers = append(version.Maintainers, dbmodel.Maintainer{
+			Name:  m.Name,
+			Email: m.Email,
+		})
+	}
+
+	for _, v := range r.Rules {
+		version.Rules = append(version.Rules, dbmodel.FalcoRuleData{
+			Raw: v.Raw,
+		})
+	}
+
+	return version
 }
