@@ -10,20 +10,28 @@ import (
 
 func NewRouter() http.Handler {
 	router := httprouter.New()
-	registerOn(router, nil)
+	registerOn(NewHandlerFileRepository(nil), router, nil)
 
 	return cors.Default().Handler(router)
 }
 
 func NewRouterWithLogger(logger *log.Logger) http.Handler {
 	router := httprouter.New()
-	registerOn(router, logger)
+
+	registerOn(NewHandlerFileRepository(logger), router, logger)
 
 	return cors.Default().Handler(router)
 }
 
-func registerOn(router *httprouter.Router, logger *log.Logger) {
-	h := NewHandlerRepository(logger)
+func NewDBRouterWithLogger(logger *log.Logger) http.Handler {
+	router := httprouter.New()
+
+	registerOn(NewHandlerDBRepository(logger), router, logger)
+
+	return cors.Default().Handler(router)
+}
+
+func registerOn(h HandlerRepository, router *httprouter.Router, logger *log.Logger) {
 	router.GET("/resources", h.retrieveAllResourcesLatestVersionsHandler)
 	router.GET("/resources/:resource", h.retrieveOneResourceHandler)
 	router.GET("/resources/:resource/custom-rules.yaml", h.retrieveFalcoRulesForHelmChartHandler)

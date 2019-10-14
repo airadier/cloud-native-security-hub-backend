@@ -29,7 +29,14 @@ type handlerRepository struct {
 	logger  *log.Logger
 }
 
-func NewHandlerRepository(logger *log.Logger) HandlerRepository {
+func NewHandlerFileRepository(logger *log.Logger) HandlerRepository {
+	return &handlerRepository{
+		factory: usecases.NewFileFactory(),
+		logger:  logger,
+	}
+}
+
+func NewHandlerDBRepository(logger *log.Logger) HandlerRepository {
 	return &handlerRepository{
 		factory: usecases.NewDBFactory(),
 		logger:  logger,
